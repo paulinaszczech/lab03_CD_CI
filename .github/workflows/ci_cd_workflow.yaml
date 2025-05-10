@@ -27,7 +27,7 @@ jobs:
 
          - name: Run PyTest
            run: uv run pytest tests
-           
+
    deployment:
       name: model-deployment
       runs-on: ubuntu-latest
@@ -42,7 +42,7 @@ jobs:
            run: uv sync --group deployment
 
          - name: Download model artifacts
-           run: uv run python src/scripts/main.py --script download
+           run: uv run python main.py --script download
 
          - name: Export model to ONNX
-           run: uv run python src/scripts/main.py --script export
+           run: uv run python main.py --script export
