@@ -46,3 +46,7 @@ jobs:
 
          - name: Export model to ONNX
            run: uv run python main.py --script export
+
+         - name: Build Docker Image
+           run: docker build -t polish-sentiment-app-onnx:latest .
+
