@@ -1,12 +1,22 @@
 # our CI/CD workflow .yaml file
 name: CI/CD workflow
 
-on: workflow_dispatch
-
+on:
+  workflow_dispatch:
+    inputs:
+      steps:
+        description: "Wybierz, które kroki uruchomić"
+        required: true
+        type: choice
+        options: 
+          - integration
+          - all
+        default: all
 jobs:
    integration:
       name: checks_and_tests
       runs-on: ubuntu-latest
+      if: ${{ inputs.steps == 'all' || inputs.steps == 'integration' }}
       steps:
          - name: Checkout code repo
            # this action clones current repository to the VM where our job is running
@@ -31,6 +41,8 @@ jobs:
    deployment:
       name: model-deployment
       runs-on: ubuntu-latest
+      needs: integration
+      if: ${{ needs.integration.result == 'success' && inputs.steps == 'all' }}
       steps:
          - name: Checkout code repo
            uses: actions/checkout@v4
@@ -50,3 +62,27 @@ jobs:
          - name: Build Docker Image
            run: docker build -t polish-sentiment-app-onnx:latest .
 
+         - name: Set up AWS credentials
+           uses: aws-actions/configure-aws-credentials@v1
+           with:
+             aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+             aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+             aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+
+             aws-region: us-east-1  
+
+         - name: Login to ECR
+           id: login-ecr
+           uses: aws-actions/amazon-ecr-login@v2
+           with:
+             mask-password: 'true'
+
+         - name: Push Docker image
+           run: |
+             REGISTRY=${{ steps.login-ecr.outputs.registry }}
+             REPOSITORY=851725323026.dkr.ecr.us-east-1.amazonaws.com/pszczech_repository_ci/cd
+             IMAGE_TAG=${{ github.sha }}
+
+             docker tag polish-sentiment-app-onnx:latest $REGISTRY/$REPOSITORY:$IMAGE_TAG
+             docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+           
