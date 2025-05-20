@@ -80,7 +80,7 @@ jobs:
          - name: Push Docker image
            run: |
              REGISTRY=${{ steps.login-ecr.outputs.registry }}
-             REPOSITORY=pszczech_repository_aws
+             REPOSITORY=pszczech_repository_ci/cd
              IMAGE_TAG=${{ github.sha }}
 
              docker tag polish-sentiment-app-onnx:latest $REGISTRY/$REPOSITORY:$IMAGE_TAG
